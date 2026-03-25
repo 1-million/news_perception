@@ -29,6 +29,13 @@ public class ChatController {
     @PostMapping("/api/chat")
     @ResponseBody
     public ResultResponse chat(@RequestBody ChatRequest request) {
+        String response = chatModel.chat(request.getMessage());
+        return new ResultResponse(response, true);
+    }
+
+    @PostMapping("/api/memChat")
+    @ResponseBody
+    public ResultResponse memChat(@RequestBody ChatRequest request) {
         memorys.add(UserMessage.userMessage(request.getMessage()));
         ChatResponse response = chatModel.chat(memorys);
         memorys.add(UserMessage.userMessage(response.aiMessage().text()));
