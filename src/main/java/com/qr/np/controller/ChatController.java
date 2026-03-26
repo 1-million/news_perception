@@ -4,6 +4,8 @@ import com.qr.np.dto.ChatRequest;
 import com.qr.np.dto.ResultResponse;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import jakarta.annotation.Resource;
@@ -20,6 +22,8 @@ public class ChatController {
     private ChatModel chatModel;
 
     private final List<ChatMessage> memorys = new ArrayList<>();
+
+    private final ChatMemory chatMemories = MessageWindowChatMemory.withMaxMessages(100);
 
     @GetMapping("/")
     public String index() {
@@ -39,6 +43,15 @@ public class ChatController {
         memorys.add(UserMessage.userMessage(request.getMessage()));
         ChatResponse response = chatModel.chat(memorys);
         memorys.add(UserMessage.userMessage(response.aiMessage().text()));
+        return new ResultResponse(response.aiMessage().text(), true);
+    }
+
+    @PostMapping("/api/memChatV2")
+    @ResponseBody
+    public ResultResponse memChatV2(@RequestBody ChatRequest request) {
+        chatMemories.add(UserMessage.userMessage(request.getMessage()));
+        ChatResponse response = chatModel.chat(chatMemories.messages());
+        chatMemories.add(UserMessage.userMessage(response.aiMessage().text()));
         return new ResultResponse(response.aiMessage().text(), true);
     }
 }
