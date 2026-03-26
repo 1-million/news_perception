@@ -1,7 +1,7 @@
 package com.qr.np.controller;
 
-import com.qr.np.dto.ChatRequest;
-import com.qr.np.dto.ResultResponse;
+import com.qr.np.model.ChatRequest;
+import com.qr.np.model.ResultResponse;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;

@@ -1,4 +1,4 @@
-package com.qr.np.dto;
+package com.qr.np.model;
 
 import lombok.Data;
 
