@@ -3,6 +3,6 @@ package com.qr.np.model;
 import lombok.Data;
 
 @Data
-public class ChatRequest {
+public class RequestMsg {
     private String message;
 }
