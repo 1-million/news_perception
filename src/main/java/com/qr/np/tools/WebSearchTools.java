@@ -3,11 +3,24 @@ package com.qr.np.tools;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
+import dev.langchain4j.community.web.search.searxng.SearXNGWebSearchEngine;
+import dev.langchain4j.web.search.WebSearchResults;
+import dev.langchain4j.web.search.searchapi.SearchApiWebSearchEngine;
+import jakarta.annotation.Resource;
+import org.springframework.stereotype.Component;
+
+@Component
 public class WebSearchTools {
 
-    @Tool(name = "search engine",value = "搜索今天日期。")
-    public static String search(@P("query:查询的关键字内容。") String query) {
+    @Resource
+    private SearXNGWebSearchEngine searXNGWebSearchEngine;
+    @Resource
+    private SearchApiWebSearchEngine searchApiWebSearchEngine;
+
+    @Tool(name = "search engine",value = "适用于各种搜索类任务。")
+    public String search(@P("query:查询的关键字内容。") String query) {
         System.out.println(query);
-        return String.format("接口调试：,%s,今天我结婚了。",query);
+        WebSearchResults results = searchApiWebSearchEngine.search(query);
+        return results.toString();
     }
 }

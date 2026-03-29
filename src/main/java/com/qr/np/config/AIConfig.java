@@ -23,7 +23,7 @@ public class AIConfig {
     @Value("${langchain4j.open-ai.temperature}")
     private Double temperature;
 
-    @Bean
+    @Bean("chatModel")
     public ChatModel chatLanguageModel() {
         return OpenAiChatModel.builder()
                 .baseUrl(baseUrl)

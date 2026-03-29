@@ -17,34 +17,34 @@ import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
-import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.model.chat.response.*;
-import dev.langchain4j.web.search.WebSearchOrganicResult;
-import dev.langchain4j.web.search.WebSearchResults;
-import dev.langchain4j.web.search.searchapi.SearchApiWebSearchEngine;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 @Controller
 public class ChatController {
 
-    @Resource
+    @Resource(name = "chatModel")
     private ChatModel chatModel;
     @Resource
     private StreamingChatModel streamingChatModel;
+    @Resource
+    private WebSearchTools webSearchTools;
 
     private final List<ChatMessage> memorys = new ArrayList<>();
 
     private final ChatMemory chatMemories = MessageWindowChatMemory.withMaxMessages(100);
 
-    @Resource
-    private SearchApiWebSearchEngine searchApiWebSearchEngine;
+//    @Resource
+//    private SearchApiWebSearchEngine searchApiWebSearchEngine;
 
     @GetMapping("/")
     public String index() {
@@ -135,7 +135,7 @@ public class ChatController {
     @PostMapping("/api/searchChat")
     @ResponseBody
     public ResultResponse searchChat(@RequestBody RequestMsg request) {
-        System.out.println("searchApiWebSearchEngine:"+searchApiWebSearchEngine);
+        /*System.out.println("searchApiWebSearchEngine:"+searchApiWebSearchEngine);
         WebSearchResults results = searchApiWebSearchEngine.search(request.getMessage());
         System.out.println("searchChat:"+results);
         List<ChatMessage> searchMessages = new ArrayList<>();
@@ -149,16 +149,16 @@ public class ChatController {
             if(Objects.nonNull(result.snippet())) {
                 searchMessages.add(UserMessage.userMessage(result.snippet()));
             }
-        }
-        searchMessages.add(UserMessage.userMessage("以上是搜索结果，请总结搜索内容后返回。"));
-        ChatResponse response = chatModel.chat(searchMessages);
+        }*/
+        //searchMessages.add(UserMessage.userMessage("以上是搜索结果，请总结搜索内容后返回。"));
+        ChatResponse response = chatModel.chat(List.of(UserMessage.userMessage(request.getMessage())));
         return new ResultResponse(response.aiMessage().text(), true);
     }
 
     @PostMapping("/api/searchChatV2")
     @ResponseBody
     public ResultResponse searchChatV2(@RequestBody RequestMsg request) throws JsonProcessingException {
-        List<ToolSpecification> tools = ToolSpecifications.toolSpecificationsFrom(WebSearchTools.class);
+        List<ToolSpecification> tools = ToolSpecifications.toolSpecificationsFrom(webSearchTools);
         ChatRequest chatRequest = ChatRequest.builder()
                 .messages(List.of(UserMessage.userMessage(request.getMessage())))
                 .toolSpecifications(tools)
@@ -168,8 +168,9 @@ public class ChatController {
             ToolExecutionRequest executionRequest = response.aiMessage().toolExecutionRequests().get(0);
             System.out.println("executionRequest:"+executionRequest);
             ObjectMapper mapper = new ObjectMapper();
-            Map<String, String> map = mapper.readValue(executionRequest.arguments(), new TypeReference<Map<String, String>>(){});
-            String result = WebSearchTools.search(map.get("query"));
+            Map<String, String> map = mapper.readValue(executionRequest.arguments(), new TypeReference<>() {
+            });
+            String result = webSearchTools.search(map.get("query"));
             ToolExecutionResultMessage toolExecutionResultMessage = ToolExecutionResultMessage.from(executionRequest,result);
             System.out.println("executionRequest:"+executionRequest);
             System.out.println("toolExecutionResultMessage:"+toolExecutionResultMessage);

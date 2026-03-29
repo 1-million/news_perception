@@ -66,8 +66,9 @@
         </dependency>
 
         <dependency>
-            <groupId></groupId>
-            <artifactId>json</artifactId>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-community-web-search-engine-searxng</artifactId>
+            <version>1.12.2-beta22</version>
         </dependency>
 
         <dependency>
