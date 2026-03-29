@@ -1,15 +1,23 @@
 package com.qr.np.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qr.np.model.RequestMsg;
 import com.qr.np.model.ResultResponse;
+import com.qr.np.tools.WebSearchTools;
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.agent.tool.ToolSpecifications;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.model.chat.response.*;
 import dev.langchain4j.web.search.WebSearchOrganicResult;
 import dev.langchain4j.web.search.WebSearchResults;
@@ -20,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Controller
@@ -143,6 +152,30 @@ public class ChatController {
         }
         searchMessages.add(UserMessage.userMessage("以上是搜索结果，请总结搜索内容后返回。"));
         ChatResponse response = chatModel.chat(searchMessages);
+        return new ResultResponse(response.aiMessage().text(), true);
+    }
+
+    @PostMapping("/api/searchChatV2")
+    @ResponseBody
+    public ResultResponse searchChatV2(@RequestBody RequestMsg request) throws JsonProcessingException {
+        List<ToolSpecification> tools = ToolSpecifications.toolSpecificationsFrom(WebSearchTools.class);
+        ChatRequest chatRequest = ChatRequest.builder()
+                .messages(List.of(UserMessage.userMessage(request.getMessage())))
+                .toolSpecifications(tools)
+                .build();
+        ChatResponse response = chatModel.chat(chatRequest);
+        if(response.aiMessage().hasToolExecutionRequests()){
+            ToolExecutionRequest executionRequest = response.aiMessage().toolExecutionRequests().get(0);
+            System.out.println("executionRequest:"+executionRequest);
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, String> map = mapper.readValue(executionRequest.arguments(), new TypeReference<Map<String, String>>(){});
+            String result = WebSearchTools.search(map.get("query"));
+            ToolExecutionResultMessage toolExecutionResultMessage = ToolExecutionResultMessage.from(executionRequest,result);
+            System.out.println("executionRequest:"+executionRequest);
+            System.out.println("toolExecutionResultMessage:"+toolExecutionResultMessage);
+            // 把工具执行结果加入的消息中，让LLM继续推理。
+            response = chatModel.chat(List.of(UserMessage.userMessage(request.getMessage()),toolExecutionResultMessage));
+        }
         return new ResultResponse(response.aiMessage().text(), true);
     }
 }
