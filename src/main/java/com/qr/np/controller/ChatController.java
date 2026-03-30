@@ -9,15 +9,23 @@ import com.qr.np.tools.WebSearchTools;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.agent.tool.ToolSpecifications;
+import dev.langchain4j.data.document.Document;
+import dev.langchain4j.data.document.loader.FileSystemDocumentLoader;
+import dev.langchain4j.data.document.splitter.DocumentByWordSplitter;
+import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.*;
+import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
+import dev.langchain4j.store.embedding.IngestionResult;
+import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +36,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 public class ChatController {
@@ -177,6 +186,36 @@ public class ChatController {
             // 把工具执行结果加入的消息中，让LLM继续推理。
             response = chatModel.chat(List.of(UserMessage.userMessage(request.getMessage()),toolExecutionResultMessage));
         }
+        return new ResultResponse(response.aiMessage().text(), true);
+    }
+
+    @PostMapping("/api/ragChat")
+    @ResponseBody
+    public ResultResponse ragChat(@RequestBody RequestMsg request){
+        List<ChatMessage> relevance = new ArrayList<>();
+        // 用户提示词。
+        relevance.add(UserMessage.from(request.getMessage()));
+        // 相关信息。
+        relevance.add(UserMessage.from("我是一个软件程序员。"));
+        relevance.add(UserMessage.from("我已经工作了9年时间。"));
+        relevance.add(UserMessage.from("擅长 Java,spring boot,mysql,mybatis-plus等。"));
+        // 调用LLM。
+        ChatResponse response = chatModel.chat(relevance);
+        return new ResultResponse(response.aiMessage().text(), true);
+    }
+
+    @PostMapping("/api/ragChatV2")
+    @ResponseBody
+    public ResultResponse ragChatV2(@RequestBody RequestMsg request){
+        // 解析文档。
+        Document document = FileSystemDocumentLoader.loadDocument("e://data//月光的信件.txt");
+        // 向量存储。
+        InMemoryEmbeddingStore<TextSegment> store = new InMemoryEmbeddingStore<>();
+        // 摄取器，将文档转换为向量。
+        IngestionResult ingestionResult = EmbeddingStoreIngestor.ingest(document,store);
+        System.out.println("ingestionResult:"+ingestionResult);
+        // 调用LLM。
+        ChatResponse response = chatModel.chat();
         return new ResultResponse(response.aiMessage().text(), true);
     }
 }
