@@ -22,6 +22,8 @@ public class SearchConfig {
     public SearXNGWebSearchEngine getSearxngWebSearchEngine() {
         return SearXNGWebSearchEngine.builder()
                 .baseUrl("http://111.228.34.65:8888")
+                .logRequests(true)
+                .logResponses(true)
                 .build();
     }
 
