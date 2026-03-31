@@ -1,12 +1,15 @@
 package com.qr.np.config;
 
 import com.qr.np.service.IAssistant;
+import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.agent.tool.ToolSpecifications;
 import dev.langchain4j.community.web.search.searxng.SearXNGWebSearchEngine;
 import dev.langchain4j.http.client.HttpClientBuilder;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.rag.DefaultRetrievalAugmentor;
@@ -15,15 +18,20 @@ import dev.langchain4j.rag.content.retriever.WebSearchContentRetriever;
 import dev.langchain4j.rag.query.router.DefaultQueryRouter;
 import dev.langchain4j.rag.query.router.QueryRouter;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.tool.ToolExecutor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 public class AIConfig {
+
+    static int count = 0;
 
     @Value("${langchain4j.open-ai.api-key}")
     private String apiKey;
@@ -62,10 +70,10 @@ public class AIConfig {
     // 创建一个AI服务。
     @Bean
     public IAssistant getChatService() {
-        ChatModel chatModel = OpenAiChatModel.builder()
-                .baseUrl("http://192.168.2.77:1234/v1")
-                .apiKey("sk-lm-tYzHYm0c:0zviFAtrtlRnDyAwbDFF")
-                .modelName("nvidia/nemotron-3-nano-4b")
+        StreamingChatModel chatModel = OpenAiStreamingChatModel.builder()
+                .baseUrl(baseUrl)
+                .apiKey(apiKey)
+                .modelName(modelName)
                 .temperature(temperature)
                 .logRequests(true)
                 .logResponses(true)
@@ -88,12 +96,30 @@ public class AIConfig {
                 .queryRouter(queryRouter)
                 .build();
 
+        // 工具
+        Map<ToolSpecification, ToolExecutor> tools = new HashMap<>();
+        ToolSpecification screenHostTool = ToolSpecification.builder()
+                .name("screen-host")
+                .description("屏幕截图工具。")
+                .parameters(JsonObjectSchema.builder()
+                        .addIntegerProperty("left","左上角x坐标")
+                        .addIntegerProperty("top","左上角y坐标")
+                        .addIntegerProperty("width","宽度")
+                        .addIntegerProperty("height","高度")
+                        .required("left","top","width","height")
+                .build())
+                .build();
+        tools.put(screenHostTool, (request, memoryId)->{
+            System.out.println("screenHostTool:"+count++);
+            return "截图成功";
+        });
         return AiServices
                 .builder(IAssistant.class)
-                .chatModel(chatModel)
+                .streamingChatModel(chatModel)
                 .chatMemory(chatMemory)
                 // 设置 WebSearchTools
                 //.retrievalAugmentor(retrievalAugmentor)
+                .tools(tools)
                 .build();
     }
 }
