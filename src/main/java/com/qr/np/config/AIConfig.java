@@ -10,6 +10,7 @@ import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.http.client.HttpClientBuilder;
 import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -94,10 +95,12 @@ public class AIConfig {
 //                .maxMessages(100)
 //                .build();
 
-        ChatMemory chatMemory = MessageWindowChatMemory.builder()
-                .chatMemoryStore(chatMemoryStore)
-                .maxMessages(100)
-                .build();
+        ChatMemoryProvider chatMemoryProvider = memoryId ->
+                MessageWindowChatMemory.builder()
+                        .id(memoryId)
+                        .chatMemoryStore(chatMemoryStore)
+                        .maxMessages(100)
+                        .build();
 
         WebSearchContentRetriever webSearchContentRetriever = WebSearchContentRetriever.builder()
                 .webSearchEngine(SearXNGWebSearchEngine.builder()
@@ -130,7 +133,7 @@ public class AIConfig {
         return AiServices
                 .builder(IAssistant.class)
                 .chatModel(chatModel)
-                .chatMemory(chatMemory)
+                .chatMemoryProvider(chatMemoryProvider)
                 // 设置 WebSearchTools
                 //.retrievalAugmentor(retrievalAugmentor)
                 .tools(tools)

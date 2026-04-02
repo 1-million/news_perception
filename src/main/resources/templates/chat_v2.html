@@ -66,6 +66,17 @@
                 </div>
             </div>
             <div style="display: flex; gap: 10px; padding: 15px 0; flex-shrink: 0;">
+                <el-input 
+                    v-model="sId" 
+                    placeholder="会话ID" 
+                    style="width: 120px;"
+                >
+                    <template #prepend>
+                        <el-icon @click="generateSessionId" style="cursor: pointer;">
+                            <RefreshRight />
+                        </el-icon>
+                    </template>
+                </el-input>
                 <el-select v-model="selectedApi" placeholder="选择API接口" style="width: 150px;">
                     <el-option label="默认接口" value="/api/adv/chat"></el-option>
                     <el-option label="单次记忆接口" value="/api/memChat"></el-option>
@@ -109,7 +120,8 @@
                 const isLoading = ref(false);
                 const chatContainer = ref(null);
                 const inputRef = ref(null);
-                const selectedApi = ref('/api/chat');
+                const selectedApi = ref('/api/adv/chat');
+                const sId = ref('');
 
                 const getMessageStyle = (type) => {
                     const baseStyle = {
@@ -156,6 +168,10 @@
                 console.log('marked:', typeof marked);
                 console.log('DOMPurify:', typeof DOMPurify);
 
+                const generateSessionId = () => {
+                    return 'session_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+                };
+
                 const scrollToBottom = async () => {
                     await nextTick();
                     if (chatContainer.value) {
@@ -177,7 +193,10 @@
                             headers: {
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({ message })
+                            body: JSON.stringify({ 
+                                memoryId: sId.value,
+                                message 
+                            })
                         });
 
                         const data = await response.json();
@@ -200,6 +219,7 @@
                 };
 
                 onMounted(() => {
+                    sId.value = generateSessionId();
                     scrollToBottom();
                 });
 
@@ -210,9 +230,11 @@
                     chatContainer,
                     inputRef,
                     selectedApi,
+                    sId,
                     getMessageStyle,
                     renderMarkdown,
-                    sendMessage
+                    sendMessage,
+                    generateSessionId
                 };
             }
         });

@@ -18,7 +18,7 @@ public class MemoryController {
 
     @GetMapping("/memory/save")
     public String saveMemory(String sId,String prompt) {
-        memoryService.save(new Memory(null,Integer.valueOf(sId),prompt,new Date()));
+        memoryService.save(new Memory(null,sId,prompt,new Date()));
         return "memory";
     }
     @GetMapping("/memory/delete")

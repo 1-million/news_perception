@@ -23,7 +23,8 @@ public class AdvChatController {
 
     @PostMapping("/api/adv/chat")
     public ResultResponse chat(@RequestBody RequestMsg request) {
-        String response = assistant.chat(request.getMessage());
+        System.out.println("Received request - memoryId: " + request.getMemoryId() + ", message: " + request.getMessage());
+        String response = assistant.chat(request.getMemoryId(),request.getMessage());
         return new ResultResponse(response, true);
     }
 }

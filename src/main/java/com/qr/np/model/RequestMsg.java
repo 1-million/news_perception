@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class RequestMsg {
-    private String sId;
+    private String memoryId;
     private String message;
 }

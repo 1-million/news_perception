@@ -1,5 +1,7 @@
 package com.qr.np.store;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.qr.np.model.Memory;
 import com.qr.np.service.IMemoryService;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
@@ -9,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -20,7 +23,9 @@ public class PgChatMemoryStore implements ChatMemoryStore {
     @Override
     public List<ChatMessage> getMessages(Object memoryId) {
         log.info("getMessages:{}",memoryId);
-        return List.of(UserMessage.from("你好"));
+        List<Memory> memories = memoryService.list(new QueryWrapper<Memory>().eq("session_id",memoryId));
+        List<ChatMessage> messages  = memories.stream().map(memory -> UserMessage.from(memory.getText())).collect(Collectors.toUnmodifiableList());
+        return messages;
     }
 
     @Override

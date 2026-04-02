@@ -14,7 +14,7 @@ import java.util.Date;
 public class Memory {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
-    private Integer sessionId;
+    private String sessionId;
     private String text;
     private Date createTime;
 }
