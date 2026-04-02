@@ -28,7 +28,7 @@ public class MySubscription implements Flow.Subscription{
             }
             subscriber.onNext(data.subList(start,end).toString());
         }
-        subscriber.onNext("hello");
+        subscriber.onComplete();
     }
 
     @Override

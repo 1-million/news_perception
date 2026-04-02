@@ -12,7 +12,7 @@ public class MySubscriber implements Flow.Subscriber<String>{
         this.subscription = subscription;
         log.info("MySubscriber-subscribe");
         log.info("MySubscriber-subscription;{}",subscription);
-        subscription.request(2);
+        subscription.request(1);
     }
 
     @Override
@@ -27,6 +27,6 @@ public class MySubscriber implements Flow.Subscriber<String>{
 
     @Override
     public void onComplete() {
-
+        log.info("MySubscriber-onComplete.");
     }
 }
