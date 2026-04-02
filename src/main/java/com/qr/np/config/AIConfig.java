@@ -1,9 +1,13 @@
 package com.qr.np.config;
 
 import com.qr.np.service.IAssistant;
+import com.qr.np.service.IMemoryService;
+import com.qr.np.store.PgChatMemoryStore;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.agent.tool.ToolSpecifications;
 import dev.langchain4j.community.web.search.searxng.SearXNGWebSearchEngine;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.http.client.HttpClientBuilder;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -19,6 +23,9 @@ import dev.langchain4j.rag.query.router.DefaultQueryRouter;
 import dev.langchain4j.rag.query.router.QueryRouter;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.tool.ToolExecutor;
+import dev.langchain4j.store.memory.chat.ChatMemoryStore;
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,12 +33,15 @@ import org.springframework.context.annotation.Configuration;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Configuration
 public class AIConfig {
 
-    static int count = 0;
+    @Resource
+    private PgChatMemoryStore chatMemoryStore;
 
     @Value("${langchain4j.open-ai.api-key}")
     private String apiKey;
@@ -70,7 +80,7 @@ public class AIConfig {
     // 创建一个AI服务。
     @Bean
     public IAssistant getChatService() {
-        StreamingChatModel chatModel = OpenAiStreamingChatModel.builder()
+        ChatModel chatModel = OpenAiChatModel.builder()
                 .baseUrl(baseUrl)
                 .apiKey(apiKey)
                 .modelName(modelName)
@@ -80,7 +90,12 @@ public class AIConfig {
                 .timeout(Duration.ofSeconds(100))
                 .build();
 
+//        ChatMemory chatMemory = MessageWindowChatMemory.builder()
+//                .maxMessages(100)
+//                .build();
+
         ChatMemory chatMemory = MessageWindowChatMemory.builder()
+                .chatMemoryStore(chatMemoryStore)
                 .maxMessages(100)
                 .build();
 
@@ -110,12 +125,11 @@ public class AIConfig {
                 .build())
                 .build();
         tools.put(screenHostTool, (request, memoryId)->{
-            System.out.println("screenHostTool:"+count++);
             return "截图成功";
         });
         return AiServices
                 .builder(IAssistant.class)
-                .streamingChatModel(chatModel)
+                .chatModel(chatModel)
                 .chatMemory(chatMemory)
                 // 设置 WebSearchTools
                 //.retrievalAugmentor(retrievalAugmentor)
