@@ -1,7 +1,6 @@
 package com.qr.np.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.qr.np.mapper.MemoryMapper;
 import com.qr.np.model.Memory;
 import com.qr.np.service.IMemoryService;
 import jakarta.annotation.Resource;
@@ -18,7 +17,7 @@ public class MemoryController {
 
     @GetMapping("/memory/save")
     public String saveMemory(String sId,String prompt) {
-        memoryService.save(new Memory(null,sId,prompt,new Date()));
+        memoryService.save(null);
         return "memory";
     }
     @GetMapping("/memory/delete")

@@ -12,9 +12,11 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Memory {
-    @TableId(value = "id", type = IdType.AUTO)
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Integer id;
     private String sessionId;
+    private Integer sort;
+    private String type;
     private String text;
     private Date createTime;
 }
