@@ -30,8 +30,10 @@ public class JSONController {
                         .rootElement(JsonObjectSchema.builder() // see [1] below
                                 .addStringProperty("name")
                                 .addIntegerProperty("age")
-                                .addStringProperty("gender")
-                                .required("name", "age", "gender") // see [2] below
+                                .addStringProperty("gender","中文并且只有男或女")
+                                .addStringProperty("phone")
+                                .addStringProperty("email")
+                                .addStringProperty("address")
                                 .build())
                         .build())
                 .build();
